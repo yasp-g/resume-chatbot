@@ -1,0 +1,12 @@
+/* status_display */
+#status_display {
+    display: flex;
+    min-height: 2.5em;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+#status_display p {
+    font-size: .85em;
+    font-family: monospace;
+    color: var(--body-text-color-subdued);
+}
