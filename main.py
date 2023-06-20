@@ -6,6 +6,7 @@ import gradio as gr
 import openai
 from context import system_prompt
 
+# added a comment at the top about bananas
 openai.api_key = os.getenv('OPENAI_API_KEY')
 GPT = 'gpt-3.5-turbo'
 # GPT = 'gpt-4'
@@ -60,6 +61,7 @@ def save_chat():
             writer.writerow(d)
 
 
+# TODO:
 def get_files(checkboxes):
     """Retrieves chat log filenames as selected be checkboxes.
 
@@ -233,4 +235,6 @@ with gr.Blocks(css=customCSS) as demo:
         save_click = save_btn.click(save_chat)
         save_click.then(fn=get_files, inputs=file_types, outputs=file_out)
 
-demo.queue().launch(share=True)
+demo.queue().launch()
+
+# A role for scalr to provision infrastructure.
