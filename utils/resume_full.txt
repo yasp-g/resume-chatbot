@@ -1,0 +1,58 @@
+Jasper Gallagher
+Berlin | +49(0) 152 04146049 | jasper@yasp.studio
+
+
+Education
+University of Maryland
+May 2016
+BS, Mechanical Engineering
+College Park, MD
+
+Universität Kassel
+January, 2016
+Renewable Energy Sources Program
+Kassel, Hessen
+
+
+Work Experience
+Nowledge
+Jan. 2022 - Present
+Machine Learning Engineer
+New York & Berlin (Remote)
+- Nowledge: a browser extension that uses machine learning to supplement online article reading
+- Developed NLP tools to supplement the reading of online articles and journals
+- Trained Latent Dirichlet Allocation models for article topic identification
+- Defined named entity recognition processes
+- Generated visualizations for data relevant to article topics
+
+Johnson Controls Inc.
+July 2018 – Aug 2021
+Systems Designer
+Washington, DC
+- Engineered comprehensive building automation systems (BAS) as defined by contract documents
+- Developed and tested software that controlled mechanical and network systems
+- Defined and optimized controls systems sequences of operation verbiage
+- Created and compiled project-relevant submittal documentation such as system flow diagrams, bill of materials, network layout, electrical schematics
+- Provided data-driven recommendations for BAS optimization and improvement
+- Built site specific graphical user interfaces based on customer needs
+- Designed and led training sessions on the systems developed and presented to clients/operators
+- Led technician teams and subcontractors throughout the project completion processes
+
+Johnson Controls Inc.
+July 2016 – July 2018
+Systems Tech
+Washington, DC
+- Validated complete building automation system functionality for final commissioning / release
+- Tested and revised software programs to ensure proper operation per contract documents
+- Commissioned application controllers, network controllers and server machines
+
+
+Certificates and Technical Project Experience
+- Applied Data Science with Python, University of Michigan on Coursera, earned March 2023
+- Machine Learning, Stanford University on Coursera, earned Nov. 2020
+- Data Scientist Career Path, Codecademy, earned July 2022
+
+
+Skills and Interests
+- Skills: Python, Jupyter, Colaboratory, scikit-learn, pandas, numpy, TensorFlow, Machine Learning, Data Science, Exploratory Data Analysis, Data Cleaning, gradio, git, SQL, MATLAB, spaCy
+- Interests: Yoga, art, the internet, comedy, philosophy, sustainability, language, travel

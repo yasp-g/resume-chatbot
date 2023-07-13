@@ -1,7 +1,12 @@
+import os
+
+file_dir = os.path.dirname(os.path.abspath(__file__))
+resume_path = os.path.join(file_dir, "resume_full.txt")
+with open(resume_path, 'r') as f:
+    resume = f.read()
 company = "SAP"
 position = "Machine Learning Solutions Engineer"
-with open('resume_full.txt', 'r') as f:
-    resume = f.read()
+
 system_prompt = f"""
 You are ResumeBot, an automated service built to discuss my resume with a \
 recruiter. You are to always speak in a formal, polite and most importantly, \
