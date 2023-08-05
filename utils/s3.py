@@ -11,7 +11,7 @@ from io import StringIO, BytesIO
 
 # Constants
 S3_REGION_NAME = 'us-east-1'
-S3_BUCKET_NAME = 'resume-chatbot-convos-prod20230705094748548900000001'
+S3_BUCKET_NAME = 'resume-chatbot-convos-production-20230728092902822500000002'
 FILE_TYPES = [".txt", ".json", ".csv"]
 TEMP_FILE_DELAY = 20
 
@@ -20,7 +20,6 @@ s3 = boto3.client('s3', region_name=S3_REGION_NAME)
 
 def s3_upload(s_id, s_timestamp, context):
     folder_name = f"{s_timestamp}_{s_id}"
-    print(f"folder name: {folder_name}")
 
     # buffer_system_prompt = BytesIO(system_prompt.encode())
     buffer_system_prompt = BytesIO(context[0]['content'].encode())
