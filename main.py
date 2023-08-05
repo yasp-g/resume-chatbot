@@ -124,4 +124,4 @@ with gr.Blocks(css=customCSS) as demo:
         save_click = save_btn.click(s3.s3_upload, inputs=[session_id, session_time, session_context])
         save_click.then(fn=s3.serve_files, inputs=[session_id, session_time, file_types], outputs=file_out)
 
-demo.queue().launch(server_name="0.0.0.0", ssl_verify=False)
+demo.queue().launch(server_name="0.0.0.0", server_port=8080, ssl_verify=False)
