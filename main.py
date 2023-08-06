@@ -1,4 +1,6 @@
 import uuid
+import logging
+import sys
 
 import gradio as gr
 
@@ -8,21 +10,15 @@ from utils.config import STATUS_MSGS, SYSTEM_PROMPT, TITLE, SUB_TITLE, DESCRIPTI
 
 # TODO: delete utils.context (moved it into config.py)
 
-# SYSTEM_PROMPT = "respond to the first message with `m1`. The second: `m2`. The third: `m3` and so on"
 chat_saving = True
 
-
-def get_session_id():
-    return str(uuid.uuid1())
-
-
-def get_datetime():
-    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-
-def reset_context():
-    return [{'role': 'system', 'content': SYSTEM_PROMPT}]
-
+# Logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 # CSS
 with open("static/custom.css", "r", encoding="utf-8") as f:
@@ -34,8 +30,8 @@ with gr.Blocks(css=customCSS) as demo:
     # Session variables
     session_chat = gr.State([])
     session_context = gr.State([{'role': 'system', 'content': SYSTEM_PROMPT}])
-    session_id = gr.State(get_session_id)
-    session_time = gr.State(get_datetime)
+    session_id = gr.State(lambda: str(uuid.uuid1()))
+    session_time = gr.State(lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
 
     # GRADIO LAYOUT
     # Title, description, status display
@@ -61,7 +57,7 @@ with gr.Blocks(css=customCSS) as demo:
         with gr.Tab("Download Chat"):
             with gr.Column():
                 with gr.Row():
-                    file_out = gr.File()
+                    file_out = gr.File(label="File(s)")
                 with gr.Row():
                     file_types = gr.CheckboxGroup([".txt", ".json", ".csv"],
                                                   label="Select file type(s) to download")
@@ -103,25 +99,31 @@ with gr.Blocks(css=customCSS) as demo:
     user_submit.then(**assistant_msg_args)
     user_submit.then(**reset_msg_box_args)
     # user_submit.then(print_chat, [session_chat, session_context])
-    user_submit.then(s3.s3_upload, inputs=[session_id, session_time, session_context])
+    user_submit.then(fn=s3.s3_upload, inputs=[session_id, session_time, session_context])
 
     # Textbox + Send button
     submit_click = submit_btn.click(**user_msg_args)
     submit_click.then(**assistant_msg_args)
     submit_click.then(**reset_msg_box_args)
     # submit_click.then(print_chat, [session_chat, session_context])
-    submit_click.then(s3.s3_upload, inputs=[session_id, session_time, session_context])
+    submit_click.then(fn=s3.s3_upload, inputs=[session_id, session_time, session_context])
 
     # Clear button
     clear_click = clear_btn.click(fn=lambda: (None, [], STATUS_MSGS['cleared']),
                                   inputs=None,
                                   outputs=[chat, session_chat, status_display],
                                   queue=False)
-    clear_click.then(reset_context, None, session_context)
+    clear_click.then(fn=lambda: [{'role': 'system', 'content': SYSTEM_PROMPT}], inputs=None, outputs=session_context)
+    clear_click.then(fn=lambda: (None, []), inputs=None, outputs=[file_out, file_types])
 
     # Save Chat button
     if chat_saving:
-        save_click = save_btn.click(s3.s3_upload, inputs=[session_id, session_time, session_context])
+        save_click = save_btn.click(fn=s3.s3_upload, inputs=[session_id, session_time, session_context])
         save_click.then(fn=s3.serve_files, inputs=[session_id, session_time, file_types], outputs=file_out)
 
-demo.queue().launch(server_name="0.0.0.0", server_port=8080, ssl_verify=False)
+logger.info('Launching the app...')
+try:
+    # demo.queue().launch() # for local
+    demo.queue().launch(server_name="0.0.0.0", server_port=8080, ssl_verify=False)
+except Exception as e:
+    logger.error('An error occurred while launching the app:', exc_info=True)
