@@ -60,12 +60,8 @@ def assistant_msg(history, context):
         # TODO: decide if delay below is needed
         # time.sleep(0.01)
         yield history, history, context, STATUS_MSGS['responding']
-    # # TODO: what is this even doing????
-    # try:
-    #     yield history, history, context, STATUS_MSGS['ready']
-    # except Exception as e:
-    #     print(f"Error: {e}")
-    # TODO: figure out how to s3.s3_upload() after assistant_msg() from outside of this function (need session_id and
-    #  time to write to s3) (if this is even needed??)
-    # if chat_saving:
-    #     # s3.s3_upload()
+    # TODO: what is this even doing????
+    try:
+        yield history, history, context, STATUS_MSGS['ready']
+    except Exception as e:
+        print(f"Error: {e}")

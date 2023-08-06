@@ -10,3 +10,16 @@
     font-family: monospace;
     color: var(--body-text-color-subdued);
 }
+
+/* server_name */
+#server_name {
+    display: flex;
+    min-height: 2.5em;
+    align-items: flex-end;
+    justify-content: flex-end;
+}
+#server_name p {
+    font-size: .85em;
+    font-family: monospace;
+    color: var(--body-text-color-subdued);
+}
