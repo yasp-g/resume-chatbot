@@ -1,5 +1,6 @@
 import uuid
 import logging
+import os
 import sys
 
 import gradio as gr
@@ -57,11 +58,13 @@ with gr.Blocks(css=customCSS) as demo:
         with gr.Tab("Download Chat"):
             with gr.Column():
                 with gr.Row():
-                    file_out = gr.File(label="File(s)")
-                with gr.Row():
                     file_types = gr.CheckboxGroup([".txt", ".json", ".csv"],
                                                   label="Select file type(s) to download")
                     save_btn = gr.Button("Save Chat")
+                with gr.Row():
+                    file_out = gr.File(label="File(s)")
+
+    server_name = gr.Markdown(f"Server: {os.getenv('INSTANCE_NAME')}", elem_id="server_name")
 
     # Chatbot arg simplification
     user_msg_args = dict(
@@ -99,14 +102,14 @@ with gr.Blocks(css=customCSS) as demo:
     user_submit.then(**assistant_msg_args)
     user_submit.then(**reset_msg_box_args)
     # user_submit.then(print_chat, [session_chat, session_context])
-    user_submit.then(fn=s3.s3_upload, inputs=[session_id, session_time, session_context])
+    user_submit.then(fn=s3.upload, inputs=[session_id, session_time, session_context])
 
     # Textbox + Send button
     submit_click = submit_btn.click(**user_msg_args)
     submit_click.then(**assistant_msg_args)
     submit_click.then(**reset_msg_box_args)
     # submit_click.then(print_chat, [session_chat, session_context])
-    submit_click.then(fn=s3.s3_upload, inputs=[session_id, session_time, session_context])
+    submit_click.then(fn=s3.upload, inputs=[session_id, session_time, session_context])
 
     # Clear button
     clear_click = clear_btn.click(fn=lambda: (None, [], STATUS_MSGS['cleared']),
@@ -118,8 +121,7 @@ with gr.Blocks(css=customCSS) as demo:
 
     # Save Chat button
     if chat_saving:
-        save_click = save_btn.click(fn=s3.s3_upload, inputs=[session_id, session_time, session_context])
-        save_click.then(fn=s3.serve_files, inputs=[session_id, session_time, file_types], outputs=file_out)
+        save_click = save_btn.click(fn=s3.serve_files, inputs=[session_id, session_time, file_types], outputs=file_out)
 
 logger.info('Launching the app...')
 try:

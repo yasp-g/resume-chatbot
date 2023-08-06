@@ -18,7 +18,7 @@ TEMP_FILE_DELAY = 20
 s3 = boto3.client('s3', region_name=S3_REGION_NAME)
 
 
-def s3_upload(s_id, s_timestamp, context):
+def upload(s_id, s_timestamp, context):
     folder_name = f"{s_timestamp}_{s_id}"
 
     # buffer_system_prompt = BytesIO(system_prompt.encode())
