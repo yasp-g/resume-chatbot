@@ -12,7 +12,7 @@ from utils.config import STATUS_MSGS, SYSTEM_PROMPT, TITLE, SUB_TITLE, DESCRIPTI
 # TODO: delete utils.context (moved it into config.py)
 
 chat_saving = True
-print("API_KEY:", bool(os.environ.get("API_KEY")))
+print("OPENAI_API_KEY:", bool(os.environ.get("OPENAI_API_KEY")))
 
 # Logging
 logger = logging.getLogger()
