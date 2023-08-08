@@ -30,7 +30,7 @@ def upload(s_id, s_timestamp, context):
     buffer_txt = BytesIO("\n".join(message_log).encode())
     s3.upload_fileobj(buffer_txt, Bucket=S3_BUCKET_NAME, Key=f'{folder_name}/resumebot_convo.txt')
 
-    buffer_json = BytesIO(json.dumps(context[1:], indent=1).encode())
+    buffer_json = BytesIO(json.dumps(context[1:], indent=2).encode())
     s3.upload_fileobj(buffer_json, Bucket=S3_BUCKET_NAME, Key=f'{folder_name}/resumebot_convo.json')
 
     fieldnames = ['role', 'content']
