@@ -11,7 +11,10 @@ from io import StringIO, BytesIO
 
 # Constants
 S3_REGION_NAME = 'us-east-1'
-S3_BUCKET_NAME = 'resume-chatbot-convos-production-20230728092902822500000002'
+if os.environ.get("INSTANCE_NAME") == 'local':
+    S3_BUCKET_NAME = 'resume-chatbot-convos-staging-20230728092902821900000001'
+else:
+    S3_BUCKET_NAME = 'resume-chatbot-convos-production-20230728092902822500000002'
 FILE_TYPES = [".txt", ".json", ".csv"]
 TEMP_FILE_DELAY = 20
 
