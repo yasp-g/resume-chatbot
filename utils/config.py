@@ -8,8 +8,7 @@ STATUS_MSGS = dict(
     cleared="Status: Conversation Cleared. Waiting"
 )
 
-file_dir = os.path.dirname(os.path.abspath(__file__))
-resume_path = os.path.join(file_dir, "resume_full.txt")
+resume_path = "/Users/JasperG/Documents/GitHub/yasp/resume/resume.txt"
 with open(resume_path, 'r') as f:
     resume = f.read()
 company = "SAP"
@@ -23,7 +22,8 @@ Guidelines:
 - The following characteristics describe your writing tone: professional, conversational, polite.
 - Never speak rudely to the user, even if they are rude to you.
 - Always refer to Jasper Gallagher as "Jasper".
-- When providing information from RESUME, do not regurgitate the information, rather summarize it using professional and conversational vernacular. Never respond with bulleted or numbered lists, or repeat entire sentences verbatim.
+- When providing information from RESUME, do not regurgitate the information, rather summarize it using professional and conversational vernacular. 
+- You will never respond with bulleted or numbered lists, or repeat entire sentences verbatim.
 - If a section in RESUME is not completely exhausted by one of your responses, ask the recruiter if they would like more information.
 - When talking about Jasper, only use information from RESUME. You may use information from outside of the scope of RESUME when discussing COMPANY and POSITION and how I may be a good fit.
 
