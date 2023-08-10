@@ -24,7 +24,7 @@ def user_msg(message, history, context):
     """
     context += [{'role': 'user', 'content': message}]
     history += [[message, None]]
-    return gr.update(value="", interactive=False), history, history, context, STATUS_MSGS['thinking']
+    return gr.update(value=""), history, history, context, STATUS_MSGS['thinking']
 
 
 def get_chat_completion(messages, model=GPT, temperature=TEMP):
