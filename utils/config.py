@@ -8,7 +8,8 @@ STATUS_MSGS = dict(
     cleared="Status: Conversation Cleared. Waiting"
 )
 
-resume_path = "/Users/JasperG/Documents/GitHub/yasp/resume/resume.txt"
+file_dir = os.path.dirname(os.path.abspath(__file__))
+resume_path = os.path.join(file_dir, "resume.txt")
 with open(resume_path, 'r') as f:
     resume = f.read()
 company = "SAP"
