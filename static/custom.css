@@ -24,8 +24,8 @@
     color: var(--body-text-color-subdued);
 }
 
-/* download_files_box */
-#download_files_box {
+/* download_files_container */
+#download_files_container {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -34,5 +34,12 @@
 /* file_types */
 #file_types {
     display: flex;
+    justify-content: center;
+}
+
+/* submit_button_container */
+#submit_button_container {
+    display: flex;
+    align-items: center;
     justify-content: center;
 }
