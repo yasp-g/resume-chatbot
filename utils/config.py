@@ -5,7 +5,8 @@ STATUS_MSGS = dict(
     thinking="Status: Thinking...",
     responding="Status: Responding...",
     ready="Status: Ready",
-    cleared="Status: Conversation Cleared. Waiting"
+    cleared="Status: Conversation Cleared. Waiting",
+    error="Status: Error"
 )
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -49,6 +50,6 @@ DESCRIPTION_TOP = """\
 <div align="left">
 <p style="font-size: large">ResumeBot is a chatbot designed to provide an interactive natural language interface for Jasper's professional experience and qualifications. The UI was built using Gradio, all infrastructure was built using AWS and the chatbot was built using ChatGPT.</p >
 <p style="font-size: large">This app is intended to serve as a fun little portfolio project that I can include in cover letters, CVs, etc. Commercial use is strictly prohibited.</p >
-<p style="font-size: large">This is a super early, VIP, friends & family, insider look, seed round investor, alpha phase, development preview release of the app. I'm sharing it with you to test it out in the real world in hopes of exposing any bugs in the app or infrastructure. For this reason, just a quick FYI: it's currently set up to log conversations so I can review them in the event of any funny business. Many thanks if you even made it this far in the intro essay and many many more if you take the time to play around with the chatbot. I appreciate you and would love to any feedback you might have &#128578;.</p >
+<p style="font-size: large">This is a super early, VIP, friends & family, insider look, seed round investor, alpha phase, development preview release of the app. I'm sharing it with you to test it out in the real world in hopes of exposing any bugs in the app or infrastructure. For this reason, just a quick FYI: it's currently set up to log conversations so I can review them in the event of any funny business. Many thanks if you even made it this far in the intro spiel and many many more if you take the time to play around with the chatbot. I appreciate you and would love to hear any feedback you might have &#128578;.</p >
 </div>
 """
