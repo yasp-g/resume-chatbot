@@ -1,48 +1,90 @@
 import csv
 import json
 import os
+import requests
 import tempfile
 import threading
 import time
 
 import boto3
 
+from botocore.exceptions import ClientError
 from io import StringIO, BytesIO
 
-# Constants
-S3_REGION_NAME = 'us-east-1'
-if os.environ.get("INSTANCE_NAME") == 'local':
-    S3_BUCKET_NAME = 'resume-chatbot-convos-staging-20230728092902821900000001'
-else:
-    S3_BUCKET_NAME = 'resume-chatbot-convos-production-20230728092902822500000002'
+# CONSTANTS
+S3_REGION_NAME = "us-east-1"
 FILE_TYPES = [".txt", ".json", ".csv"]
 TEMP_FILE_DELAY = 20
 
 s3 = boto3.client('s3', region_name=S3_REGION_NAME)
 
 
-def upload(s_id, s_timestamp, context):
-    folder_name = f"{s_timestamp}_{s_id}"
+# TODO: fork a branch and see if it's better to run get_bucket_path() in a gr.State() and declare
+#  'S3_BUCKET_PATH' environment variable that way (probably eliminates needing to feed session_id
+#  and s_timestamp into s3_upload() and serve_files() or the need for session_id and session_time
+#  at all. Feels cleaner.
+def get_bucket_path(s3_client=s3):
+    if not os.environ.get('ENVIRONMENT'):
+        os.environ['ENVIRONMENT'] = "Development"
+    all_buckets = s3_client.list_buckets()
+    for bucket in all_buckets['Buckets']:
+        # if f"resume-chatbot-convos-{os.environ.get('ENVIRONMENT').lower()}" in bucket['Name']:
+        if f"resume-chatbot-" in bucket['Name']:
+            os.environ['S3_BUCKET_NAME'] = bucket['Name']
+            os.environ['S3_BUCKET_PATH'] = f"convos/{os.environ.get('ENVIRONMENT').lower()}"
+            break
+    else:
+        raise Exception("No matching S3 bucket found for the environment")
+
+
+def get_api_key():
+    secret_name = "openai-api-key"
+    region_name = "us-east-1"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        raise e
+
+    secret = get_secret_value_response['SecretString']
+    secret_dict = json.loads(secret)
+    api_key = secret_dict['OPENAI_API_KEY']
+    os.environ['OPENAI_API_KEY'] = api_key
+
+
+def s3_upload(s_id, s_timestamp, context):
+    convo_path = f"{os.environ.get('S3_BUCKET_PATH')}/{s_timestamp}_{s_id}"
 
     # buffer_system_prompt = BytesIO(system_prompt.encode())
     buffer_system_prompt = BytesIO(context[0]['content'].encode())
-    s3.upload_fileobj(buffer_system_prompt, Bucket=S3_BUCKET_NAME, Key=f'{folder_name}/system_prompt.txt')
+    s3.upload_fileobj(buffer_system_prompt, Bucket=os.environ.get('S3_BUCKET_NAME'),
+                      Key=f"{convo_path}/system_prompt.txt")
 
     message_log = [": ".join(m.values()) for m in context[1:]]
 
     buffer_txt = BytesIO("\n".join(message_log).encode())
-    s3.upload_fileobj(buffer_txt, Bucket=S3_BUCKET_NAME, Key=f'{folder_name}/resumebot_convo.txt')
+    s3.upload_fileobj(buffer_txt, Bucket=os.environ.get('S3_BUCKET_NAME'), Key=f"{convo_path}/resumebot_convo.txt")
 
     buffer_json = BytesIO(json.dumps(context[1:], indent=2).encode())
-    s3.upload_fileobj(buffer_json, Bucket=S3_BUCKET_NAME, Key=f'{folder_name}/resumebot_convo.json')
+    s3.upload_fileobj(buffer_json, Bucket=os.environ.get('S3_BUCKET_NAME'), Key=f"{convo_path}/resumebot_convo.json")
 
-    fieldnames = ['role', 'content']
+    fieldnames = ["role", "content"]
     buffer_csv_string = StringIO()
     csv_writer = csv.DictWriter(buffer_csv_string, fieldnames=fieldnames)
     csv_writer.writeheader()
     csv_writer.writerows(context[1:])
     buffer_csv_bytes = BytesIO(buffer_csv_string.getvalue().encode())
-    s3.upload_fileobj(buffer_csv_bytes, Bucket=S3_BUCKET_NAME, Key=f'{folder_name}/resumebot_convo.csv')
+    s3.upload_fileobj(buffer_csv_bytes, Bucket=os.environ.get('S3_BUCKET_NAME'),
+                      Key=f'{convo_path}/resumebot_convo.csv')
 
 
 def delete_file_after_delay(delay, path):
@@ -54,17 +96,19 @@ def delete_file_after_delay(delay, path):
 
 
 def serve_files(s_id, s_timestamp, checkboxes):
-    folder_name = f"{s_timestamp}_{s_id}"
+    convo_path = f"{os.environ.get('S3_BUCKET_PATH')}/{s_timestamp}_{s_id}"
     files = []
 
     for file_type in FILE_TYPES:
         if file_type in checkboxes:
             try:
-                obj = s3.get_object(Bucket=S3_BUCKET_NAME, Key=f"{folder_name}/resumebot_convo{file_type}")
+                # TODO: see if "resumebot_convo" can be changed to "resume-chatbot-convo"
+                obj = s3.get_object(Bucket=os.environ.get('S3_BUCKET_NAME'),
+                                    Key=f"{convo_path}/resumebot_convo{file_type}")
                 # Read the content of the file
                 file_content = obj['Body'].read()
                 # Create a temporary file
-                fd, path = tempfile.mkstemp(suffix=file_type, prefix='resumebot_convo-', dir=tempfile.gettempdir(),
+                fd, path = tempfile.mkstemp(suffix=file_type, prefix="resumebot_convo-", dir=tempfile.gettempdir(),
                                             text=True)
                 with os.fdopen(fd, 'w') as tmp:
                     tmp.write(file_content.decode('utf-8'))  # decode the content to string if it's bytes
