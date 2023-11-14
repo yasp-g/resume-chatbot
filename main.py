@@ -9,6 +9,23 @@ from datetime import datetime
 from utils import aws, chatbot
 from utils.config import STATUS_MSGS, SYSTEM_PROMPT, TITLE, SUB_TITLE, DESCRIPTION_TOP
 
+import functools
+import time
+
+
+def timing_decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"Function {func.__name__!r} executed in {(end_time - start_time):.4f}s")
+        return result
+
+    return wrapper
+
+
+
 # LOGGING
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -20,9 +37,8 @@ logger.addHandler(handler)
 # SETUP
 chat_saving = True
 # logging_check = True
+aws.get_api_key()
 aws.get_bucket_path()
-if not os.environ.get('OPENAI_API_KEY'):
-    aws.get_api_key()
 
 logger.info(f"INSTANCE_NAME: {os.environ.get('INSTANCE_NAME')}")
 logger.info(f"ENVIRONMENT: {os.environ.get('ENVIRONMENT')}")
@@ -30,6 +46,7 @@ logger.info(f"OPENAI_API_KEY check: {bool(os.environ.get('OPENAI_API_KEY'))}")
 logger.info(f"S3_BUCKET_NAME check: {bool(os.environ.get('S3_BUCKET_NAME'))}")
 
 
+@timing_decorator
 def serve_error(error):
     # print("error warning", error)
     if error:
@@ -151,7 +168,7 @@ with gr.Blocks(css=customCSS, theme="sudeepshouche/minimalist") as demo:
         save_btn.click(fn=aws.serve_files, inputs=[session_id, session_time, file_types], outputs=file_out)
 
 logger.info("Launching the app...")
-demo.queue(concurrency_count=1)
+demo.queue()  # concurrency_count=1)
 try:
     if __name__ == "__main__":
         # demo.launch(share=True)  # for local
