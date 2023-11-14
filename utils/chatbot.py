@@ -9,12 +9,27 @@ import gradio as gr
 
 from .config import STATUS_MSGS
 
+import functools
+
+
+def timing_decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"Function {func.__name__!r} executed in {(end_time - start_time):.4f}s")
+        return result
+
+    return wrapper
+
 # Constants
 GPT = 'gpt-4'
 # GPT = 'gpt-3.5-turbo'
 TEMP = 0.1
 
 
+@timing_decorator
 def user_msg(message, history, context):
     """Process user message.
 
@@ -29,6 +44,7 @@ def user_msg(message, history, context):
         'thinking']
 
 
+@timing_decorator
 def get_chat_completion(messages, model=GPT, temperature=TEMP):
     """Get chat completion from openai API.
 
@@ -42,7 +58,6 @@ def get_chat_completion(messages, model=GPT, temperature=TEMP):
         openai.api_key = os.environ.get('OPENAI_API_KEY')
 
     if openai.api_key is None:
-        # Handle the case where the environment variable is not set
         raise EnvironmentError("No OpenAI API key.")
 
     try:
@@ -76,6 +91,7 @@ def get_chat_completion(messages, model=GPT, temperature=TEMP):
         return None, e, error_message
 
 
+@timing_decorator
 def assistant_msg(chat_history, chat_context):
     """Update gradio chat with openai chat completion.
 
