@@ -9,21 +9,7 @@ from datetime import datetime
 from utils import aws, chatbot
 from utils.config import STATUS_MSGS, SYSTEM_PROMPT, TITLE, SUB_TITLE, DESCRIPTION_TOP
 
-import functools
-import time
-
-
-def timing_decorator(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        print(f"Function {func.__name__!r} executed in {(end_time - start_time):.4f}s")
-        return result
-
-    return wrapper
-
+from utils.timing_decorator import timing_decorator
 
 
 # LOGGING
@@ -61,11 +47,13 @@ with open("static/custom.css", "r", encoding="utf-8") as f:
 with gr.Blocks(css=customCSS, theme="sudeepshouche/minimalist") as demo:
     # SETUP
     # Session variables
-    session_chat = gr.State([])
-    session_context = gr.State([{'role': 'system', 'content': SYSTEM_PROMPT}])
-    session_id = gr.State(lambda: str(uuid.uuid1()))
-    session_time = gr.State(lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-    session_error = gr.State()
+    S_client = gr.State(chatbot.create_openai_client)
+    S_chat = gr.State([])
+    S_context = gr.State([{'role': 'system', 'content': SYSTEM_PROMPT}])
+    S_id = gr.State(lambda: str(uuid.uuid1()))
+    S_time = gr.State(lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    S_error = gr.State()
+    # gr.State(chatbot.warm_up_api)
 
     # GRADIO LAYOUT
     # Title, description, status display
@@ -76,7 +64,8 @@ with gr.Blocks(css=customCSS, theme="sudeepshouche/minimalist") as demo:
 
     # Chatbot Tab
     with gr.Tab("Chatbot"):
-        with gr.Box():
+        # TODO: see whats best to do now that gr.Group() is depricated
+        with gr.Group():
             chat = gr.Chatbot(label="Chat")
             with gr.Row(variant='panel', equal_height=False, elem_id='submit_button_container'):
                 # TODO: check if container=False bug has been addressed
@@ -90,7 +79,7 @@ with gr.Blocks(css=customCSS, theme="sudeepshouche/minimalist") as demo:
     if chat_saving:
         with gr.Tab("Download Chat"):
             with gr.Row():
-                with gr.Box(elem_id="download_files_container"):
+                with gr.Group(elem_id="download_files_container"):
                     with gr.Column(scale=1, min_width=480):
                         gr.Markdown("<center>Select file type(s) and click Save Chat</center>")
                         file_types = gr.CheckboxGroup([".txt", ".json", ".csv"], show_label=False, elem_id="file_types")
@@ -100,49 +89,86 @@ with gr.Blocks(css=customCSS, theme="sudeepshouche/minimalist") as demo:
 
     server_name = gr.Markdown(f"Server: {os.getenv('INSTANCE_NAME')}", elem_id="server_name")
 
-    # CHATBOT ACTION ARGUMENTS
-    user_msg_args = dict(
+    # APP ACTIONS
+    # Textbox enter
+    msg_box.submit(  # take in user message
         fn=chatbot.user_msg,
         inputs=[msg_box,
-                session_chat,
-                session_context],
+                S_chat,
+                S_context],
         outputs=[msg_box,
                  submit_btn,
-                 session_chat,
+                 S_chat,
                  chat,
-                 session_context,
+                 S_context,
                  status_display],
         queue=True,
-        show_progress=True
-    )
-
-    assistant_msg_args = dict(
+        api_name="usr_msg_submit"
+        # show_progress=True
+    ).then(  # get and serve chat completion
         fn=chatbot.assistant_msg,
-        inputs=[session_chat,
-                session_context],
-        outputs=[session_chat,
+        inputs=[S_client,
+                S_chat,
+                S_context],
+        outputs=[S_chat,
                  chat,
-                 session_context,
-                 session_error,
+                 S_context,
+                 S_error,
                  msg_box,
                  submit_btn,
                  status_display],
-        # show_progress=True,
-        queue=True
+        queue=True,
+        api_name="assistant_msg_submit",
+        # show_progress=True
+    ).then(  # upload chat to S3
+        fn=aws.s3_upload,
+        inputs=[S_id, S_time, S_context],
+        api_name="s3_upload_submit"
+    ).then(  # serve error if needed
+        fn=serve_error,
+        inputs=S_error,
+        api_name="serve_error_submit"
     )
 
-    # APP ACTIONS
-    # Textbox enter
-    user_submit = msg_box.submit(**user_msg_args)
-    user_submit.then(**assistant_msg_args)
-    user_submit.then(fn=aws.s3_upload, inputs=[session_id, session_time, session_context])
-    user_submit.then(fn=serve_error, inputs=session_error)
-
     # Textbox + Send button
-    submit_click = submit_btn.click(**user_msg_args)
-    submit_click.then(**assistant_msg_args)
-    submit_click.then(fn=aws.s3_upload, inputs=[session_id, session_time, session_context])
-    submit_click.then(fn=serve_error, inputs=session_error)
+    submit_btn.click(  # take in user message
+        fn=chatbot.user_msg,
+        inputs=[msg_box,
+                S_chat,
+                S_context],
+        outputs=[msg_box,
+                 submit_btn,
+                 S_chat,
+                 chat,
+                 S_context,
+                 status_display],
+        queue=True,
+        api_name="usr_msg_click"
+        # show_progress=True
+    ).then(  # get and serve chat completion
+        fn=chatbot.assistant_msg,
+        inputs=[S_client,
+                S_chat,
+                S_context],
+        outputs=[S_chat,
+                 chat,
+                 S_context,
+                 S_error,
+                 msg_box,
+                 submit_btn,
+                 status_display],
+        queue=True,
+        api_name="assistant_msg_click",
+        # show_progress=True
+    ).then(  # upload chat to S3
+        fn=aws.s3_upload,
+        inputs=[S_id, S_time, S_context],
+        api_name="s3_upload_click"
+    ).then(  # serve error if needed
+        fn=serve_error,
+        inputs=S_error,
+        api_name="serve_error_click"
+    )
 
     # TODO: Finish this / decide if even needed
     # Error info button
@@ -150,28 +176,49 @@ with gr.Blocks(css=customCSS, theme="sudeepshouche/minimalist") as demo:
     #                                         outputs=None)
 
     # Clear button
-    clear_click = clear_btn.click(fn=lambda: (None, []),
-                                  outputs=[chat, session_chat],
-                                  queue=False)
-    clear_click.then(fn=lambda: gr.State(), outputs=session_error)
-    clear_click.then(fn=lambda: gr.update(placeholder="Type a message.", interactive=True), outputs=msg_box)
-    clear_click.then(fn=lambda: gr.update(interactive=True), outputs=submit_btn)
-    clear_click.then(fn=lambda: [{'role': 'system', 'content': SYSTEM_PROMPT}], outputs=session_context)
-    clear_click.then(fn=lambda: (None, []), outputs=[file_out, file_types])
-    clear_click.then(fn=lambda: STATUS_MSGS['cleared'], outputs=status_display)
+    clear_btn.click(
+        fn=lambda: (None, []),
+        outputs=[chat, S_chat],
+        queue=False,
+        api_name="clear_chat"
+    ).then(
+        fn=lambda: gr.State(),
+        outputs=S_error,
+        api_name="clear_error"
+    ).then(
+        fn=lambda: gr.update(placeholder="Type a message.", interactive=True),
+        outputs=msg_box,
+        api_name="reset_msg_box"
+    ).then(
+        fn=lambda: gr.update(interactive=True),
+        outputs=submit_btn,
+        api_name="reset_submit_btn"
+    ).then(
+        fn=lambda: [{'role': 'system', 'content': SYSTEM_PROMPT}],
+        outputs=S_context,
+        api_name="reset_context"
+    ).then(
+        fn=lambda: (None, []),
+        outputs=[file_out, file_types],
+        api_name="reset_files"
+    ).then(
+        fn=lambda: STATUS_MSGS['cleared'],
+        outputs=status_display,
+        api_name="reset_status_msg"
+    )
 
     # Save Chat button
     if chat_saving:
         file_types.input(fn=lambda types: gr.update(interactive=True) if any(types) else gr.update(interactive=False),
                          inputs=[file_types],
                          outputs=[save_btn])
-        save_btn.click(fn=aws.serve_files, inputs=[session_id, session_time, file_types], outputs=file_out)
+        save_btn.click(fn=aws.serve_files, inputs=[S_id, S_time, file_types], outputs=file_out)
 
 logger.info("Launching the app...")
 demo.queue()  # concurrency_count=1)
 try:
     if __name__ == "__main__":
-        # demo.launch(share=True)  # for local
-        demo.launch(server_name="0.0.0.0", server_port=8080, ssl_verify=False)  # for aws
+        demo.launch(share=True)  # for local
+        # demo.launch(server_name="0.0.0.0", server_port=8080, ssl_verify=False)  # for aws
 except Exception as e:
     logger.error('An error occurred while launching the app:', exc_info=True)
