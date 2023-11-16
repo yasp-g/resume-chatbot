@@ -11,19 +11,10 @@ import boto3
 from botocore.exceptions import ClientError
 from io import StringIO, BytesIO
 
-import functools
+from .timing_decorator import timing_decorator
+import logging
 
-
-def timing_decorator(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        print(f"Function {func.__name__!r} executed in {(end_time - start_time):.4f}s")
-        return result
-
-    return wrapper
+logger = logging.getLogger()
 
 # CONSTANTS
 S3_REGION_NAME = "us-east-1"
@@ -56,6 +47,7 @@ def get_api_key():
         secret_dict = json.loads(secret)
         api_key = secret_dict['OPENAI_API_KEY']
         os.environ['OPENAI_API_KEY'] = api_key
+        logger.info(f"get_api_key check: {bool(os.environ.get('OPENAI_API_KEY'))}")
 
 
 # TODO: fork a branch and see if it's better to run get_bucket_path() in a gr.State() and declare
