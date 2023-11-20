@@ -139,7 +139,7 @@ def assistant_msg(client, chat_history, chat_context, msg_box, submit_button):
         else:
             chat_history[-1][1] += completion
             full_response += completion
-            yield chat_history, chat_history, chat_context, e, msg_box, submit_button, STATUS_MSGS['ready']
+            yield chat_history, chat_history, chat_context, e, msg_box, submit_button, STATUS_MSGS['responding']
 
     if full_response:
         chat_context += [{'role': 'assistant', 'content': full_response}]
