@@ -1,0 +1,8 @@
+conversations/*
+sandbox/*
+venv/*
+utils/resume.txt
+utils/resume_small.txt
+logs/
+.env
+docker-compose.override.yml
