@@ -218,7 +218,7 @@ logger.info("Launching the app...")
 demo.queue()  # concurrency_count=1)
 try:
     if __name__ == "__main__":
-        demo.launch(share=True)  # for local
-        # demo.launch(server_name="0.0.0.0", server_port=8080, ssl_verify=False)  # for aws
+        # demo.launch(share=True)  # for local
+        demo.launch(server_name="0.0.0.0", server_port=8080, ssl_verify=False)  # for aws
 except Exception as e:
     logger.error('An error occurred while launching the app:', exc_info=True)
