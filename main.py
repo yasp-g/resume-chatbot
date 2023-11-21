@@ -34,7 +34,6 @@ logger.info(f"S3_BUCKET_NAME check: {bool(os.environ.get('S3_BUCKET_NAME'))}")
 
 @timing_decorator
 def serve_error(error):
-    # print("error warning", error)
     if error:
         return gr.Warning(f"{error}")
 
@@ -53,7 +52,6 @@ with gr.Blocks(css=customCSS, theme="sudeepshouche/minimalist") as demo:
     S_id = gr.State(lambda: str(uuid.uuid1()))
     S_time = gr.State(lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     S_error = gr.State()
-    # gr.State(chatbot.warm_up_api)
 
     # GRADIO LAYOUT
     # Title, description, status display
