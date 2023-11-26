@@ -1,7 +1,6 @@
 import csv
 import json
 import os
-import requests
 import tempfile
 import threading
 import time
@@ -20,6 +19,7 @@ logger = logging.getLogger()
 S3_REGION_NAME = "us-east-1"
 FILE_TYPES = [".txt", ".json", ".csv"]
 TEMP_FILE_DELAY = 20
+
 
 s3 = boto3.client('s3', region_name=S3_REGION_NAME)
 
@@ -72,21 +72,31 @@ def get_bucket_path(s3_client=s3):
 
 
 @timing_decorator
-def s3_upload(s_id, s_timestamp, context):
-    convo_path = f"{os.environ.get('S3_BUCKET_PATH')}/{s_timestamp}_{s_id}"
+def s3_upload(session_id, session_timestamp, context):
+    convo_path = f"{os.environ.get('S3_BUCKET_PATH')}/{session_timestamp}_{session_id}"
+    bucket_name = os.environ.get('S3_BUCKET_NAME')
+    files = [
+        "system_prompt.txt",
+        "resumebot_convo.txt",
+        "resumebot_convo.json",
+        "resumebot_convo.csv",
+    ]
 
-    # buffer_system_prompt = BytesIO(system_prompt.encode())
     buffer_system_prompt = BytesIO(context[0]['content'].encode())
-    s3.upload_fileobj(buffer_system_prompt, Bucket=os.environ.get('S3_BUCKET_NAME'),
+    s3.upload_fileobj(buffer_system_prompt,
+                      Bucket=bucket_name,
                       Key=f"{convo_path}/system_prompt.txt")
 
     message_log = [": ".join(m.values()) for m in context[1:]]
-
     buffer_txt = BytesIO("\n".join(message_log).encode())
-    s3.upload_fileobj(buffer_txt, Bucket=os.environ.get('S3_BUCKET_NAME'), Key=f"{convo_path}/resumebot_convo.txt")
+    s3.upload_fileobj(buffer_txt,
+                      Bucket=bucket_name,
+                      Key=f"{convo_path}/resumebot_convo.txt")
 
     buffer_json = BytesIO(json.dumps(context[1:], indent=2).encode())
-    s3.upload_fileobj(buffer_json, Bucket=os.environ.get('S3_BUCKET_NAME'), Key=f"{convo_path}/resumebot_convo.json")
+    s3.upload_fileobj(buffer_json,
+                      Bucket=bucket_name,
+                      Key=f"{convo_path}/resumebot_convo.json")
 
     fieldnames = ["role", "content"]
     buffer_csv_string = StringIO()
@@ -94,8 +104,24 @@ def s3_upload(s_id, s_timestamp, context):
     csv_writer.writeheader()
     csv_writer.writerows(context[1:])
     buffer_csv_bytes = BytesIO(buffer_csv_string.getvalue().encode())
-    s3.upload_fileobj(buffer_csv_bytes, Bucket=os.environ.get('S3_BUCKET_NAME'),
-                      Key=f'{convo_path}/resumebot_convo.csv')
+    s3.upload_fileobj(buffer_csv_bytes,
+                      Bucket=bucket_name,
+                      Key=f"{convo_path}/resumebot_convo.csv")
+
+    logger.info(f"context length: {len(context)}")
+    if len(context) <= 3:
+        manifest = {
+            "timestamp": session_timestamp,
+            "conversation_id": session_id,
+            "files": files
+            # "URL":
+        }
+
+        buffer_manifest = BytesIO(json.dumps(manifest).encode())
+        s3.upload_fileobj(buffer_manifest,
+                          Bucket=bucket_name,
+                          Key=f"{convo_path}/manifest.json")
+
 
 
 @timing_decorator
@@ -118,7 +144,6 @@ def serve_files(s_id, s_timestamp, checkboxes):
                 # TODO: see if "resumebot_convo" can be changed to "resume-chatbot-convo"
                 obj = s3.get_object(Bucket=os.environ.get('S3_BUCKET_NAME'),
                                     Key=f"{convo_path}/resumebot_convo{file_type}")
-                # Read the content of the file
                 file_content = obj['Body'].read()
                 # Create a temporary file
                 fd, path = tempfile.mkstemp(suffix=file_type, prefix="resumebot_convo-", dir=tempfile.gettempdir(),
