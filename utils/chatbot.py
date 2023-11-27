@@ -9,7 +9,7 @@ import urllib3
 import gradio as gr
 
 from openai import OpenAI
-from .config import STATUS_MSGS
+from .config import STATUS_MSGS, make_system_prompt
 from .timing_decorator import timing_decorator
 
 # SETUP
@@ -20,45 +20,36 @@ GPT = 'gpt-4'
 TEMP = 0.1
 
 
-# TODO: decide if this is needed
-@timing_decorator
-def warm_up_api(client):
-    logger.info(f"warmup check: {bool(os.environ.get('OPENAI_API_KEY'))}")
-
-    try:
-        client.chat.completions.create(
-            model=GPT,  # Use an appropriate model
-            messages=[{"role": "system", "content": "You are a helpful assistant."}],
-            temperature=0
-        )
-        logger.info("API warm-up call completed.")
-    except Exception as e:
-        logger.info(f"API warm-up call failed: {e}")
-
-
 @timing_decorator
 def create_openai_client():
     if os.environ.get('OPENAI_API_KEY') is None:
         raise EnvironmentError("No OpenAI API key.")
 
     client = OpenAI()
-    # warm_up_api(client)
 
     return client
 
 
 @timing_decorator
-def user_msg(message, history, context):
+def user_msg(message, history, context, request: gr.Request):
     """Process user message.
 
+    :param request: gr.Request object
     :param message: input from gr.Textbox component
     :param history: input from gr.Chatbot component
     :param context: input from gr.State session_context component
     :return: output to gr.Textbox component, output to gr.Chatbot component, updated session_context, output to gr.Markdown component
     """
     logger.info("---NEW MESSAGE---")
+    if not context:
+        query_params = dict(request.query_params)
+        company = query_params.get('COMP', 'Machine Learning Company').replace("_", " ")
+        role = query_params.get('ROLE', 'Machine Learning Engineer').replace("_", " ")
+        context = [{'role': 'system', 'content': make_system_prompt(company, role)}]
+
     context += [{'role': 'user', 'content': message}]
     history += [[message, None]]
+
     return gr.update(value="", interactive=False), gr.update(interactive=False), history, history, context, STATUS_MSGS[
         'thinking']
 
@@ -74,22 +65,17 @@ def get_chat_completion(client, messages, model=GPT, temperature=TEMP):
     :return: openAI chatGPT chat completion content, error message if relevant
     """
     try:
-        # logger.info("Starting chat completion stream...")
         stream = client.chat.completions.create(
             model=model,
             messages=messages,
             temperature=temperature,
             stream=True
         )
-        # logger.info("Stream created successfully.")
+
         for part in stream:
-            # logger.info("Received part from stream.")
             content = part.choices[0].delta.content
             if content:
-                # logger.info(f"Yielding content: {content}")
                 yield content, None, None
-            # else:
-            #     logger.info("Received empty content.")
 
     # TODO: handle network errors better (maybe: remove message from context, remove from history when new message sent)
     except (socket.gaierror, urllib3.exceptions.NewConnectionError, urllib3.exceptions.MaxRetryError,
@@ -126,6 +112,7 @@ def assistant_msg(client, chat_history, chat_context, msg_box, submit_button):
     start_time = time.time()  # Start timing here
     full_response = ""
     chat_history[-1][1] = ""
+
     for completion, e, error_message in get_chat_completion(client, chat_context):
         if error_message:
             chat_context += [{'role': 'assistant', 'content': error_message}]
@@ -134,17 +121,22 @@ def assistant_msg(client, chat_history, chat_context, msg_box, submit_button):
             submit_btn_update = gr.update(interactive=False)
             end_time = time.time()  # End timing before yielding
             logger.info(f"Function `assistant_msg` executed in {(end_time - start_time):.4f}s with error")
+
             yield chat_history, chat_history, chat_context, e, msg_box_update, submit_btn_update, STATUS_MSGS['error']
             break
+
         else:
             chat_history[-1][1] += completion
             full_response += completion
+
             yield chat_history, chat_history, chat_context, e, msg_box, submit_button, STATUS_MSGS['responding']
 
     if full_response:
         chat_context += [{'role': 'assistant', 'content': full_response}]
+
     msg_box_update = gr.update(value="", interactive=True)
     submit_btn_update = gr.update(interactive=True)
     end_time = time.time()  # End timing after the loop
     logger.info(f"Function `assistant_msg` executed in {(end_time - start_time):.4f}s with error")
+
     yield chat_history, chat_history, chat_context, e, msg_box_update, submit_btn_update, STATUS_MSGS['ready']
