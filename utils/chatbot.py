@@ -13,7 +13,7 @@ from .config import STATUS_MSGS, make_system_prompt
 from .timing_decorator import timing_decorator
 
 # SETUP
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.info(f"initial api key check: {bool(os.environ.get('OPENAI_API_KEY'))}")
 GPT = 'gpt-4'
 # GPT = 'gpt-3.5-turbo'

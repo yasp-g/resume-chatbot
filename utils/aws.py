@@ -13,7 +13,7 @@ from io import StringIO, BytesIO
 from .timing_decorator import timing_decorator
 import logging
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 # CONSTANTS
 S3_REGION_NAME = "us-east-1"
