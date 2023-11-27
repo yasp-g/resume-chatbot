@@ -8,7 +8,7 @@ def setup_logging():
     if not logger.handlers:
         logger.setLevel(logging.INFO)
         handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s - %(name)s')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
