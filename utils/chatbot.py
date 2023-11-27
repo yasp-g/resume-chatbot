@@ -14,7 +14,6 @@ from .timing_decorator import timing_decorator
 
 # SETUP
 logger = logging.getLogger(__name__)
-logger.info(f"initial api key check: {bool(os.environ.get('OPENAI_API_KEY'))}")
 GPT = 'gpt-4'
 # GPT = 'gpt-3.5-turbo'
 TEMP = 0.1
