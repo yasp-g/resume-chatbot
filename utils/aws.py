@@ -1,5 +1,6 @@
 import csv
 import json
+import logging
 import os
 import tempfile
 import threading
@@ -9,9 +10,9 @@ import boto3
 
 from botocore.exceptions import ClientError
 from io import StringIO, BytesIO
+import gradio as gr
 
 from .timing_decorator import timing_decorator
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ def get_bucket_path(s3_client=s3):
 
 
 @timing_decorator
-def s3_upload(session_id, session_timestamp, context):
+def s3_upload(session_id, session_timestamp, context, request: gr.Request):
     convo_path = f"{os.environ.get('S3_BUCKET_PATH')}/{session_timestamp}_{session_id}"
     bucket_name = os.environ.get('S3_BUCKET_NAME')
     files = [
@@ -108,13 +109,19 @@ def s3_upload(session_id, session_timestamp, context):
                       Bucket=bucket_name,
                       Key=f"{convo_path}/resumebot_convo.csv")
 
-    logger.info(f"context length: {len(context)}")
     if len(context) <= 3:
+        # TODO: finish this
+        query_params = dict(request.query_params)
+        company = query_params.get('comp', 'Machine Learning Company').replace("_", " ")
+        role = query_params.get('role', 'Machine Learning Engineer').replace("_", " ")
+
         manifest = {
             "timestamp": session_timestamp,
             "conversation_id": session_id,
-            "files": files
-            # "URL":
+            "files": files,
+            "URL": str(request.url),
+            "company": company,
+            "role": role
         }
 
         buffer_manifest = BytesIO(json.dumps(manifest).encode())
