@@ -1,6 +1,20 @@
+import json
 import logging
 import os
 import sys
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            'time': self.formatTime(record, self.datefmt),
+            'level': record.levelname,
+            'message': record.getMessage(),
+            'name': record.name
+        }
+        if record.exc_info:
+            log_record['exc_info'] = self.formatException(record.exc_info)
+        return json.dumps(log_record)
 
 
 def setup_logging():
@@ -8,8 +22,7 @@ def setup_logging():
     if not logger.handlers:
         logger.setLevel(logging.INFO)
         handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s - %(name)s')
-        handler.setFormatter(formatter)
+        handler.setFormatter(JsonFormatter())
         logger.addHandler(handler)
 
 
