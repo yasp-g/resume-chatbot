@@ -15,12 +15,15 @@ def main():
     demo.queue()  # concurrency_count=1)
     if os.getenv('LAUNCH_MODE') == 'AWS':
         demo.launch(  # for aws
+            share=False,
+            # max_threads=1,
             server_name="0.0.0.0",
             server_port=8080,
-            ssl_verify=False
+            ssl_verify=False,
+            favicon_path="utils/images/favicon.ico"
         )
     else:
-        demo.launch(share=True)  # for local
+        demo.launch(share=True, favicon_path="utils/images/favicon.ico")  # for local
 
 
 if __name__ == "__main__":
