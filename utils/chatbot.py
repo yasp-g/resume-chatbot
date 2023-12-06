@@ -42,15 +42,24 @@ def user_msg(message, history, context, request: gr.Request):
     logger.info("---NEW MESSAGE---")
     if not context:
         query_params = dict(request.query_params)
-        company = query_params.get('COMP', 'Machine Learning Company').replace("_", " ")
-        role = query_params.get('ROLE', 'Machine Learning Engineer').replace("_", " ")
+        company = query_params.get('comp', 'Machine Learning Company').replace("_", " ")
+        role = query_params.get('role', 'Machine Learning Engineer').replace("_", " ")
         context = [{'role': 'system', 'content': make_system_prompt(company, role)}]
 
     context += [{'role': 'user', 'content': message}]
     history += [[message, None]]
 
-    return gr.update(value="", interactive=False), gr.update(interactive=False), history, history, context, STATUS_MSGS[
-        'thinking']
+    msg_box_update = gr.update(value="", interactive=False, info="")
+    submit_btn_update = gr.update(interactive=False)
+    clear_btn_update = gr.update(interactive=False)
+
+    return (history,
+            history,
+            context,
+            msg_box_update,
+            submit_btn_update,
+            clear_btn_update,
+            STATUS_MSGS['thinking'])
 
 
 @timing_decorator
@@ -100,7 +109,7 @@ def get_chat_completion(client, messages, model=GPT, temperature=TEMP):
 
 
 # @timing_decorator
-def assistant_msg(client, chat_history, chat_context, msg_box, submit_button):
+def assistant_msg(client, chat_history, chat_context, msg_box, submit_button, clear_button):
     """Update gradio chat with openai chat completion.
 
     :param client: OpenAI client
@@ -111,6 +120,7 @@ def assistant_msg(client, chat_history, chat_context, msg_box, submit_button):
     start_time = time.time()  # Start timing here
     full_response = ""
     chat_history[-1][1] = ""
+    e = ""
 
     for completion, e, error_message in get_chat_completion(client, chat_context):
         if error_message:
@@ -121,21 +131,43 @@ def assistant_msg(client, chat_history, chat_context, msg_box, submit_button):
             end_time = time.time()  # End timing before yielding
             logger.info(f"Function `assistant_msg` executed in {(end_time - start_time):.4f}s with error")
 
-            yield chat_history, chat_history, chat_context, e, msg_box_update, submit_btn_update, STATUS_MSGS['error']
+            yield (chat_history,
+                   chat_history,
+                   chat_context,
+                   e,
+                   msg_box_update,
+                   submit_btn_update,
+                   clear_button,
+                   STATUS_MSGS['error'])
             break
 
         else:
             chat_history[-1][1] += completion
             full_response += completion
 
-            yield chat_history, chat_history, chat_context, e, msg_box, submit_button, STATUS_MSGS['responding']
+            yield (chat_history,
+                   chat_history,
+                   chat_context,
+                   e,
+                   msg_box,
+                   submit_button,
+                   clear_button,
+                   STATUS_MSGS['responding'])
 
     if full_response:
         chat_context += [{'role': 'assistant', 'content': full_response}]
 
     msg_box_update = gr.update(value="", interactive=True)
     submit_btn_update = gr.update(interactive=True)
+    clear_btn_update = gr.update(interactive=True)
     end_time = time.time()  # End timing after the loop
     logger.info(f"Function `assistant_msg` executed in {(end_time - start_time):.4f}s with error")
 
-    yield chat_history, chat_history, chat_context, e, msg_box_update, submit_btn_update, STATUS_MSGS['ready']
+    yield (chat_history,
+           chat_history,
+           chat_context,
+           e,
+           msg_box_update,
+           submit_btn_update,
+           clear_btn_update,
+           STATUS_MSGS['ready'])
