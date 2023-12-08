@@ -24,6 +24,13 @@
     color: var(--body-text-color-subdued);
 }
 
+/* description_bottom */
+#description_bottom p {
+    line-height: 0.1; /* Adjust line height to control spacing between lines */
+    /margin: 0.8em 0; /* Adjust top and bottom margins to control spacing between paragraphs */
+}
+
+
 /* download_files_container */
 #download_files_container {
     display: flex;
@@ -42,4 +49,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* msg_box */
+#msg_box textarea {
+    font-size: 16px;
+}
+
+/* Custom styles for mobile responsiveness */
+@media (max-width: 768px) {
+    /* Target the row that contains the group and placeholder */
+    #custom-row {
+        flex-direction: column;
+    }
 }
