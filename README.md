@@ -33,6 +33,8 @@ To set up ResumeBot, follow these steps:
    ```
 4. Create a `resume.txt` file in the `utils` folder with your resume content.
 
+5. Customize `system_prompt` in `make_system_prompt` function in `utils/config.py` as needed.
+
 ## Usage
 
 To start ResumeBot locally, run the following command:
