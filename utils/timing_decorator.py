@@ -2,7 +2,7 @@ import functools
 import time
 import logging
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 # def timing_decorator(func):
