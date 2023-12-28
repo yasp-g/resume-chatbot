@@ -26,8 +26,8 @@
 
 /* description_bottom */
 #description_bottom p {
-    line-height: 0.1; /* Adjust line height to control spacing between lines */
-    /margin: 0.8em 0; /* Adjust top and bottom margins to control spacing between paragraphs */
+    line-height: 0.8; /* Adjust line height to control spacing between lines */
+    margin: 0.4em 0; /* Adjust top and bottom margins to control spacing between paragraphs */
 }
 
 
