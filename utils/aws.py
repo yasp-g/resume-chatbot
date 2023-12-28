@@ -78,23 +78,32 @@ def s3_upload(session_id, session_timestamp, context, request: gr.Request):
     bucket_name = os.environ.get('S3_BUCKET_NAME')
     files = [
         "system_prompt.txt",
+        "full_context.json",
         "resumebot_convo.txt",
         "resumebot_convo.json",
         "resumebot_convo.csv",
     ]
+    system_prompt = context[0]
+    convo = context[1:]
+    convo = [m for m in convo if m.get('role') != 'system']
 
-    buffer_system_prompt = BytesIO(context[0]['content'].encode())
+    buffer_system_prompt = BytesIO(system_prompt['content'].encode())
     s3.upload_fileobj(buffer_system_prompt,
                       Bucket=bucket_name,
                       Key=f"{convo_path}/system_prompt.txt")
 
-    message_log = [": ".join(m.values()) for m in context[1:]]
+    buffer_context = BytesIO(json.dumps(context, indent=2).encode())
+    s3.upload_fileobj(buffer_context,
+                      Bucket=bucket_name,
+                      Key=f"{convo_path}/full_context.json")
+
+    message_log = [f"{': '.join(m.values())}\n" for m in convo]
     buffer_txt = BytesIO("\n".join(message_log).encode())
     s3.upload_fileobj(buffer_txt,
                       Bucket=bucket_name,
                       Key=f"{convo_path}/resumebot_convo.txt")
 
-    buffer_json = BytesIO(json.dumps(context[1:], indent=2).encode())
+    buffer_json = BytesIO(json.dumps(convo, indent=2).encode())
     s3.upload_fileobj(buffer_json,
                       Bucket=bucket_name,
                       Key=f"{convo_path}/resumebot_convo.json")
@@ -103,7 +112,7 @@ def s3_upload(session_id, session_timestamp, context, request: gr.Request):
     buffer_csv_string = StringIO()
     csv_writer = csv.DictWriter(buffer_csv_string, fieldnames=fieldnames)
     csv_writer.writeheader()
-    csv_writer.writerows(context[1:])
+    csv_writer.writerows(convo)
     buffer_csv_bytes = BytesIO(buffer_csv_string.getvalue().encode())
     s3.upload_fileobj(buffer_csv_bytes,
                       Bucket=bucket_name,
