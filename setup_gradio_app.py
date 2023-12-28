@@ -1,12 +1,15 @@
 import uuid
 import os
+import logging
 
 import gradio as gr
 
 from datetime import datetime
 from utils import aws, chatbot
-from utils.config import TITLE, SUB_TITLE, DESCRIPTION_TOP, DESCRIPTION_BOTTOM, STATUS_MSGS
+from utils.config import make_system_prompt, EN_TEXT, DE_TEXT, STATUS_MSGS
 from utils.timing_decorator import timing_decorator
+
+logger = logging.getLogger(__name__)
 
 
 @timing_decorator
@@ -26,6 +29,43 @@ def files_selected_check(types, chat_content):
         return types, gr.update(interactive=False), gr.update(visible=False)
 
 
+@timing_decorator
+def change_language(language):
+    if language == "Deutsch":
+        lang_dict = DE_TEXT
+    else:
+        lang_dict = EN_TEXT
+    return (gr.update(value=lang_dict["title"]),
+            gr.update(value=lang_dict["sub_title"]),
+            gr.update(value=lang_dict["description_top"]),
+            gr.update(value=lang_dict["description_bottom"]))
+
+    # return gr.update(value=lang_dict["title"])
+
+
+@timing_decorator
+def context_langauge_update(language, context):
+    if language == "Deutsch":
+        new_context = {'role': 'system', 'content': "Your conversation will now be in German. From now on you are programed to speak German, and you will only respond in German. Even if the user responds in a different language, you will only respond in German."}
+    else:
+        new_context = {'role': 'system', 'content': "Your conversation will now be in English. From now on you are programed to speak English, and you will only respond in English. Even if the user responds in a different language, you will only respond in English."}
+    # logger.info(f"new_context: {new_context}")
+    context.append(new_context)
+    # logger.info(f"context update: {context}")
+    return context
+
+
+def create_context(request: gr.Request):
+    query_params = dict(request.query_params)
+    company = query_params.get('comp', 'Machine Learning Company').replace("_", " ")
+    role = query_params.get('role', 'Machine Learning Engineer').replace("_", " ")
+    # logger.info(f"App Load Time: company: {company}, role: {role}")
+    context = [{'role': 'system', 'content': make_system_prompt(company, role)}]
+    logger.info(f"App Load Time: company: {context}")
+    return context
+
+
+@timing_decorator
 def setup_gradio_app():
     # SETUP
     chat_saving = True
@@ -41,15 +81,24 @@ def setup_gradio_app():
         s_time = gr.State(lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         s_chat = gr.State([])
         s_client = gr.State(chatbot.create_openai_client)
-        s_context = gr.State("")
+        # TODO: this is related to generating context at app load time. incomplete. never got a response in hugging face discord
+        # context = demo.load(fn=create_context)
+        s_context = gr.State([])
         s_error = gr.State("")
 
         # GRADIO LAYOUT
         # Title, description, status display
-        gr.Markdown(TITLE)
-        gr.Markdown(SUB_TITLE)
-        gr.Markdown(DESCRIPTION_TOP)
-        status_display = gr.Markdown(STATUS_MSGS['waiting'], elem_id="status_display")
+        title = gr.HTML(EN_TEXT["title"])
+        with gr.Row():
+            # gr.Markdown()
+            # with gr.Group(elem_id='download_files_container'):
+            with gr.Column():
+                gr.HTML("<center>Select Langauge</center>", elem_id="file_types")
+                language_radio = gr.Radio(["English", "Deutsch"], value="English", label="Select Language", container=False, scale=0, min_width=320, elem_id="file_types")
+            # gr.Markdown()
+        sub_title = gr.HTML(EN_TEXT["sub_title"])
+        description_top = gr.HTML(EN_TEXT["description_top"])
+        status_display = gr.HTML(STATUS_MSGS['waiting'], elem_id="status_display")
 
         # Chatbot Tab
         with gr.Group():
@@ -86,11 +135,12 @@ def setup_gradio_app():
                 file_out_placeholder = gr.Markdown("")
                 file_out = gr.File(label="Downloaded File(s)", scale=1, min_width=480, interactive=False, visible=False)
 
-        gr.Markdown(DESCRIPTION_BOTTOM, elem_id="description_bottom")
+        description_bottom = gr.HTML(EN_TEXT["description_bottom"], elem_id="description_bottom")
         server_name = gr.Markdown(f"Server: {os.getenv('INSTANCE_NAME')}", elem_id="server_name")
 
         # APP ACTIONS
         # Textbox enter
+        # TODO: Consider having the chatbot send first message
         msg_box.submit(  # take in user message
             fn=chatbot.user_msg,
             inputs=[msg_box,
@@ -188,6 +238,21 @@ def setup_gradio_app():
         # Error info button
         # error_info_click = error_info_btn.click(fn=gr.Info(f"Session error bool: {session_error.value}"), inputs=None,
         #                                         outputs=None)
+
+        # Language radio button
+        language_radio.change(
+            fn=change_language,
+            inputs=language_radio,
+            outputs=[title, sub_title, description_top, description_bottom],
+            queue=True,
+            show_progress="hidden"
+        ).then(
+            fn=context_langauge_update,
+            inputs=[language_radio, s_context],
+            outputs=[s_context],
+            queue=True,
+            show_progress="hidden"
+        )
 
         # Clear button
         clear_btn.click(
