@@ -41,7 +41,6 @@ def user_msg(message, history, context, request: gr.Request):
     """
     logger.info("---NEW MESSAGE---")
     # logger.info(f"first context: {context}")
-    # TODO: changed this to checking if context has any keys that are not 'system'
     if not any(d['role'] != 'system' for d in context):
         logger.info(f"Context not made yet")
     # if not context:
