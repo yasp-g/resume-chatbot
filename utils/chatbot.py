@@ -40,13 +40,17 @@ def user_msg(message, history, context, request: gr.Request):
     :return: output to gr.Textbox component, output to gr.Chatbot component, updated session_context, output to gr.Markdown component
     """
     logger.info("---NEW MESSAGE---")
-    if not context:
+    # logger.info(f"first context: {context}")
+    if not any(d['role'] != 'system' for d in context):
+        logger.info(f"Context not made yet")
+    # if not context:
         query_params = dict(request.query_params)
         company = query_params.get('comp', 'Machine Learning Company').replace("_", " ")
         role = query_params.get('role', 'Machine Learning Engineer').replace("_", " ")
-        context = [{'role': 'system', 'content': make_system_prompt(company, role)}]
+        context = [{'role': 'system', 'content': make_system_prompt(company, role)}] + context
 
     context += [{'role': 'user', 'content': message}]
+    # logger.info(context)
     history += [[message, None]]
 
     msg_box_update = gr.update(value="", interactive=False, info="")

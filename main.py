@@ -30,6 +30,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        logging.error('An error occurred while launching the app:', str(e), exc_info=True)
+        logging.error('An error occurred while launching the app:', exc_info=e)
 
 # http://127.0.0.1:7860/?comp=Example_Corp&role=Data_Scientist
