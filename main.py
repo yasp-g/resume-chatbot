@@ -1,10 +1,12 @@
 import logging
 import os
 
+from dotenv import load_dotenv
 from utils.logging_config import setup_logging, startup_logging
 from utils.aws import get_api_key, get_bucket_path
 from setup_gradio_app import setup_gradio_app
 
+load_dotenv()
 
 def main():
     setup_logging()
