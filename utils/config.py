@@ -42,6 +42,8 @@ def make_system_prompt(company, role):
     ROLE: ---{role or 'Machine Learning Engineer'}--- \
     """
 
+    # company and role are passed in via query parameters with: <url>/?comp=Example_Corp&role=Data_Scientist
+
     return system_prompt
 
 
