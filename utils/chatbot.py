@@ -14,8 +14,8 @@ from .timing_decorator import timing_decorator
 
 # SETUP
 logger = logging.getLogger(__name__)
-GPT = 'gpt-4'
-# GPT = 'gpt-3.5-turbo'
+# GPT = 'gpt-4'
+GPT = 'gpt-4o'
 TEMP = 0.1
 
 
