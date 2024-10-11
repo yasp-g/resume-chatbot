@@ -2,6 +2,7 @@ import logging
 import os
 from .timing_decorator import timing_decorator
 
+
 logger = logging.getLogger(__name__)
 file_dir = os.path.dirname(os.path.abspath(__file__))
 resume_path = os.path.join(file_dir, "resume.txt")

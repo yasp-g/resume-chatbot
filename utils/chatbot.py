@@ -12,6 +12,7 @@ from openai import OpenAI
 from .config import STATUS_MSGS, make_system_prompt
 from .timing_decorator import timing_decorator
 
+
 # SETUP
 logger = logging.getLogger(__name__)
 # GPT = 'gpt-4'
