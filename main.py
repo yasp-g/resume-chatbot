@@ -15,17 +15,40 @@ def main():
     startup_logging()
     demo = setup_gradio_app()
     demo.queue()  # concurrency_count=1)
-    if os.getenv('LAUNCH_MODE') == 'AWS':
+
+    mode = os.getenv('LAUNCH_MODE')
+    icon_path = "static/favicon.ico"
+    auths = os.getenv('AUTHS')
+
+    if mode == "AWS":
+        logging.info(f"Launch mode: {mode}")
         demo.launch(  # for aws
             share=False,
             # max_threads=1,
             server_name="0.0.0.0",
             server_port=8080,
             ssl_verify=False,
-            favicon_path="utils/images/favicon.ico"
+            favicon_path=icon_path,
+            auth=auths
+        )
+    elif mode == "PI":
+        logging.info(f"Launch mode: {mode}")
+        demo.launch( # for Raspberry Pi
+            share=False,
+            # max_threads=1,
+            server_name="0.0.0.0",
+            server_port=7860,
+            ssl_verify=False,
+            favicon_path=icon_path,
+            auth=auths
         )
     else:
-        demo.launch(share=True, favicon_path="utils/images/favicon.ico")  # for local
+        logging.info("Launch mode: LOCAL"),
+        demo.launch( # for local
+            share=True,
+            favicon_path=icon_path,
+            auth=auths
+        )  
 
 
 if __name__ == "__main__":
