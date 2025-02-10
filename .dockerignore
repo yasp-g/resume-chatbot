@@ -33,6 +33,7 @@
 LICENSE
 README.md
 venv
+.venv
 *.pyc
 *.pyo
 *.pyd
